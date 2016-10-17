@@ -6,8 +6,8 @@
 #:
 #: | Team members (username) |
 #: |:------------------------|
-#: | Grace Hopper (hopperg)  |
-#: | Donald Knuth (knuthd)   |
+#: | Jon Sonderman (sondermajj)  |
+#: | Geoff Appelbaum (appelbaumg)   |
 #:
 #: Thanks to Trip Horbinski from the Fall 2015 class for providing the password-entering functionality.
 
@@ -56,7 +56,7 @@ def main():
     (username, password) = login_gui()
 
     message_info = {}
-    message_info['To'] = 'sebern@msoe.edu'
+    message_info['To'] = 'sondermanjj@msoe.edu'
     message_info['From'] = username
     message_info['Subject'] = 'Yet another test message'
     message_info['Date'] = 'Thu, 9 Oct 2014 23:56:09 +0000'
