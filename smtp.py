@@ -147,12 +147,22 @@ def smtp_send(password, message_info, message_text):
     wrapped_socket.connect((SMTP_SERVER,SMTP_PORT))
     #IT WONT CONNECT!!!!!!
     print(read_line(wrapped_socket))
-    smtp_socket.send(b'HELO ' + SMTP_DOMAINNAME.encode() + b'\r\n')
-    wrapped_socket.send(b'AUTH LOGIN\r\n')
+    #I don't know if all should be encoded or just user and pass
+    smtp_socket.send(base64.b64encode(b'HELO ' + SMTP_DOMAINNAME.encode() + b'\r\n'))
+    wrapped_socket.send(base64.b64encode(b'AUTH LOGIN\r\n'))
     wrapped_socket.send(base64.b64encode(message_info['From'].encode())+b'\r\n')
     wrapped_socket.send(base64.b64encode(password.encode())+b'\r\n')
-    wrapped_socket.send(base64.b16encode(b'MAIL FROM:<' + message_info['From'].encode() + b'>'))
-    wrapped_socket.send(base64.b16encode(b'RCPT TO:<' + message_info['To'].encode() + b'>'))
+    wrapped_socket.send(base64.b16encode(b'MAIL FROM:<' + message_info['From'].encode() + b'>')+b'\r\n')
+    wrapped_socket.send(base64.b16encode(b'RCPT TO:<' + message_info['To'].encode() + b'>')+b'\r\n')
+    wrapped_socket.send(base64.b16encode(b'DATA')+b'\r\n')
+    wrapped_socket.send(base64.b16encode(b'From: ' + message_info['From'].encode())+b'\r\n')
+    wrapped_socket.send(base64.b16encode(b'To: ' + message_info['To'].encode())+b'\r\n')
+    wrapped_socket.send(base64.b16encode(b'Date: ' + message_info['Date'].encode())+b'\r\n')
+    wrapped_socket.send(base64.b16encode(b'Subject: ' + message_info['Subject'].encode())+b'\r\n')
+    wrapped_socket.send(b'\r\n')
+    wrapped_socket.send(base64.encode(message_text.encode())+b'\r\n')
+    wrapped_socket.send(base64.encode(b'.')+b'\r\n')
+    wrapped_socket.send(base64.encode(b'QUIT')+b'\r\n')
 
 
 
