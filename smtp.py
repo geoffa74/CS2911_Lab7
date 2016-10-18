@@ -142,18 +142,26 @@ def smtp_send(password, message_info, message_text):
             Other keys can be added to support other email headers, etc.
     """
     smtp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    smtp_socket.connect((SMTP_SERVER, SMTP_PORT))
-    print(read_line(smtp_socket))
-    smtp_socket.send(b'HELO ' + SMTP_DOMAINNAME.encode() + b'\r\n')
-    smtp_socket.send(b'STARTTLS\r\n')
-    print(read_line(smtp_socket))
     context = ssl.create_default_context()
-    wrapped_socket = context.wrap_socket(smtp_socket, server_hostname=SMTP_SERVER)
+    wrapped_socket = context.wrap_socket(smtp_socket, server_hostname = SMTP_SERVER)
+    wrapped_socket.connect((SMTP_SERVER,SMTP_PORT))
+    #IT WONT CONNECT!!!!!!
+    print(read_line(wrapped_socket))
+    smtp_socket.send(b'HELO ' + SMTP_DOMAINNAME.encode() + b'\r\n')
     wrapped_socket.send(b'AUTH LOGIN\r\n')
-    wrapped_socket.send(base64.b64encode(message_info['From'])+b'\r\n')
-    wrapped_socket.send(base64.b64encode(password)+b'\r\n')
+    wrapped_socket.send(base64.b64encode(message_info['From'].encode())+b'\r\n')
+    wrapped_socket.send(base64.b64encode(password.encode())+b'\r\n')
     wrapped_socket.send(base64.b16encode(b'MAIL FROM:<' + message_info['From'].encode() + b'>'))
     wrapped_socket.send(base64.b16encode(b'RCPT TO:<' + message_info['To'].encode() + b'>'))
+
+
+
+# Your code and additional functions go here. (Replace this line, too.)
+
+# ** Do not modify code below this line. **
+
+# Utility functions
+# You may use these functions to simplify your code.
 
 
 
@@ -170,15 +178,6 @@ def read_line(smtp_socket):
             bytes += next_byte
             print(next_byte)
     return bytes
-
-
-
-# Your code and additional functions go here. (Replace this line, too.)
-
-# ** Do not modify code below this line. **
-
-# Utility functions
-# You may use these functions to simplify your code.
 
 
 def get_formatted_date():
