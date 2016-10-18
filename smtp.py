@@ -7,7 +7,7 @@
 #: | Team members (username) |
 #: |:------------------------|
 #: | Jon Sonderman (sondermajj)  |
-#: | Geoff Appelbaum (appelbaumg)   |
+#: | Geoff Appelbaum (appelbaumgl)   |
 #:
 #: Thanks to Trip Horbinski from the Fall 2015 class for providing the password-entering functionality.
 
@@ -141,7 +141,36 @@ def smtp_send(password, message_info, message_text):
                 'Subject': Email subject
             Other keys can be added to support other email headers, etc.
     """
-    pass  # Replace this line with your code
+    smtp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    smtp_socket.connect((SMTP_SERVER, SMTP_PORT))
+    print(read_line(smtp_socket))
+    smtp_socket.send(b'HELO ' + SMTP_DOMAINNAME.encode() + b'\r\n')
+    smtp_socket.send(b'STARTTLS\r\n')
+    print(read_line(smtp_socket))
+    context = ssl.create_default_context()
+    wrapped_socket = context.wrap_socket(smtp_socket, server_hostname=SMTP_SERVER)
+    wrapped_socket.send(b'AUTH LOGIN\r\n')
+    wrapped_socket.send(base64.b64encode(message_info['From'])+b'\r\n')
+    wrapped_socket.send(base64.b64encode(password)+b'\r\n')
+    wrapped_socket.send(base64.b16encode(b'MAIL FROM:<' + message_info['From'].encode() + b'>'))
+    wrapped_socket.send(base64.b16encode(b'RCPT TO:<' + message_info['To'].encode() + b'>'))
+
+
+
+def read_line(smtp_socket):
+    bytes = b''
+    next_byte = b''
+    exit_bytes = b''
+    while exit_bytes != b'\r\n':
+        next_byte = smtp_socket.recv(1)
+        print(next_byte)
+        if next_byte == b'\r' or next_byte == b'\n':
+            exit_bytes += next_byte
+        else:
+            bytes += next_byte
+            print(next_byte)
+    return bytes
+
 
 
 # Your code and additional functions go here. (Replace this line, too.)
