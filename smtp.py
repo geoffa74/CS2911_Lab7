@@ -67,7 +67,7 @@ def main():
     print("message_info =", message_info)
     print()
 
-    filename = "sebern1.jpg"
+    filename = "PRAISE THE SEBERN.jpg"
 
     message_info['Text'] = 'Test message_info number 6\r\n\r\nAnother line.'
     message_info['Content-Disposition'] = "attachment; filename= %s" % filename
@@ -217,7 +217,11 @@ def send_data(message_info, wrapped_socket, filename):
     wrapped_socket.send(b'Date: ' + message_info['Date'].encode() + b'\r\n')
     wrapped_socket.send(b'Subject: ' + message_info['Subject'].encode() + b'\r\n')
     wrapped_socket.send(b'Content-Disposition: ' + message_info['Content-Disposition'].encode()+b'\r\n')
+    wrapped_socket.send(b'Content-Type: ' + get_mime_type(filename).encode()+b'\r\n')
+    wrapped_socket.send(b'Content-Length: ' + str(get_file_size).encode() + b'\r\n')
+    wrapped_socket.send(b'\r\n')
     send_file(filename, wrapped_socket)
+    wrapped_socket.send(b'\r\n')
     wrapped_socket.send(message_info['Text'].encode() + b'\r\n')
     wrapped_socket.send(b'\r\n.\r\n')
 
@@ -257,7 +261,6 @@ def send_file(filename, socket):
     while i < size:
         socket.send(output_file.read(1))
         i += 1
-    socket.send('b\r\n')
     output_file.close()
 
 # ** Do not modify code below this line. **
