@@ -60,7 +60,7 @@ def main():
     message_info = {}
     message_info['To'] = 'sondermanjj@msoe.edu'
     message_info['From'] = username
-    message_info['Subject'] = 'Yet another test message'
+    message_info['Subject'] = 'CS2911-DEMO'
     message_info['Date'] = 'Thu, 9 Oct 2014 23:56:09 +0000'
     message_info['Date'] = get_formatted_date()
 
@@ -212,17 +212,26 @@ def send_data(message_info, wrapped_socket, filename):
             smtp_socket: Socket that we are reading the information from
             message_info: Email information that we're sending to the server
         """
+    boundary = b'OUR LORD SEBERN'
     wrapped_socket.send(b'From: ' + message_info['From'].encode() + b'\r\n')
     wrapped_socket.send(b'To: ' + message_info['To'].encode() + b'\r\n')
     wrapped_socket.send(b'Date: ' + message_info['Date'].encode() + b'\r\n')
     wrapped_socket.send(b'Subject: ' + message_info['Subject'].encode() + b'\r\n')
+    wrapped_socket.send(b'Content - Type: multipart / mixed; boundary = "'+boundary+b'"\r\n')
+    wrapped_socket.send(boundary+b'\r\n')
+    wrapped_socket.send(b'Content-Type: text/html; charset="iso-8859-1"\r\n')
+    wrapped_socket.send(b'Content-Transfer-Encoding: quoted-printable\r\n')
+    wrapped_socket.send(b'\r\n')
+    wrapped_socket.send(message_info['Text'].encode() + b'\r\n')
+    wrapped_socket.send(b'\r\n')
+    wrapped_socket.send(boundary + b'\r\n')
     wrapped_socket.send(b'Content-Disposition: ' + message_info['Content-Disposition'].encode()+b'\r\n')
     wrapped_socket.send(b'Content-Type: ' + get_mime_type(filename).encode()+b'\r\n')
     wrapped_socket.send(b'Content-Length: ' + str(get_file_size).encode() + b'\r\n')
     wrapped_socket.send(b'\r\n')
     send_file(filename, wrapped_socket)
     wrapped_socket.send(b'\r\n')
-    wrapped_socket.send(message_info['Text'].encode() + b'\r\n')
+    wrapped_socket.send(boundary + b'\r\n')
     wrapped_socket.send(b'\r\n.\r\n')
 
 
