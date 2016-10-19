@@ -17,6 +17,8 @@ import tkinter as tk
 # Socket library
 import socket
 
+import time
+
 # SSL/TLS library
 import ssl
 
@@ -56,17 +58,18 @@ def main():
     (username, password) = login_gui()
 
     message_info = {}
-    message_info['To'] = 'appelbaumgl@msoe.edu'
+    message_info['To'] = 'sondermanjj@msoe.edu'
     message_info['From'] = username
     message_info['Subject'] = 'Yet another test message'
     message_info['Date'] = 'Thu, 9 Oct 2014 23:56:09 +0000'
     message_info['Date'] = get_formatted_date()
 
     print("message_info =", message_info)
+    print()
 
-    message_text = 'Test message_info number 6\r\n\r\nAnother line.'
+    message_info['Text'] = 'Test message_info number 6\r\n\r\nAnother line.'
 
-    smtp_send(password, message_info, message_text)
+    smtp_send(password, message_info)
 
 
 def login_gui():
@@ -126,10 +129,10 @@ def center_gui_on_screen(gui, gui_width, gui_height):
 
     return gui.geometry('%dx%d+%d+%d' % (gui_width, gui_height, x_coord, y_coord))
 
+
 # *** Do not modify code above this line ***
 
-
-def smtp_send(password, message_info, message_text):
+def smtp_send(password, message_info):
     """Send a message via SMTP.
 
     Args:
@@ -141,72 +144,99 @@ def smtp_send(password, message_info, message_text):
                 'Subject': Email subject
             Other keys can be added to support other email headers, etc.
     """
+    #Initial handshake
     smtp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    smtp_socket.connect((SMTP_SERVER,SMTP_PORT))
+    smtp_socket.connect((SMTP_SERVER, SMTP_PORT))
     print(read_line(smtp_socket))
     smtp_socket.send(b'EHLO ' + SMTP_DOMAINNAME.encode() + b'\r\n')
-    print(read_line(smtp_socket))
-    print(read_line(smtp_socket))
-    print(read_line(smtp_socket))
-    print(read_line(smtp_socket))
-    print(read_line(smtp_socket))
-    print(read_line(smtp_socket))
-    print(read_line(smtp_socket))
-    print(read_line(smtp_socket))
-    print(read_line(smtp_socket))
+    print()
+    read_lines(smtp_socket, 9)
+
 
     smtp_socket.send(b'STARTTLS\r\n')
+    print()
     print(read_line(smtp_socket))
 
     context = ssl.create_default_context()
     wrapped_socket = context.wrap_socket(smtp_socket, server_hostname=SMTP_SERVER)
 
-    wrapped_socket.send(b'EHLO ' + SMTP_DOMAINNAME.encode())
-    wrapped_socket.send(b'\r\n')
-    print(read_line(wrapped_socket))
-    print(read_line(wrapped_socket))
-    print(read_line(wrapped_socket))
-    print(read_line(wrapped_socket))
-    print(read_line(wrapped_socket))
-    print(read_line(wrapped_socket))
-    print(read_line(wrapped_socket))
-    print(read_line(wrapped_socket))
-    print(read_line(wrapped_socket))
-    wrapped_socket.send(b'AUTH LOGIN\r\n')
-    print(read_line(wrapped_socket))
-    wrapped_socket.send(base64.b64encode(message_info['From'].encode())+b'\r\n')
-    print(read_line(wrapped_socket))
-    wrapped_socket.send(base64.b64encode(password.encode())+b'\r\n')
-    print(read_line(wrapped_socket))
-    wrapped_socket.send(b'MAIL FROM:<' + message_info['From'].encode() + b'>\r\n')
-    print(read_line(wrapped_socket))
-    wrapped_socket.send(b'RCPT TO:<' + message_info['To'].encode() + b'>\r\n')
-    print(read_line(wrapped_socket))
-    wrapped_socket.send(b'DATA\r\n')
-    print(read_line(wrapped_socket))
-    wrapped_socket.send(b'From: ' + message_info['From'].encode()+b'\r\n')
-    wrapped_socket.send(b'To: ' + message_info['To'].encode()+b'\r\n')
-    wrapped_socket.send(b'Date: ' + message_info['Date'].encode()+b'\r\n')
-    wrapped_socket.send(b'Subject: ' + message_info['Subject'].encode()+b'\r\n')
-    wrapped_socket.send(b'\r\n')
-    wrapped_socket.send(message_text.encode())
-    wrapped_socket.send(b'\r\n.\r\n')
+    authentication(message_info, wrapped_socket, password)
+
+    # sends the actual information
+    send_data(message_info, wrapped_socket)
+    print()
     print(read_line(wrapped_socket))
     wrapped_socket.send(b'QUIT\r\n')
+    print()
     print(read_line(wrapped_socket))
 
+def authentication(message_info, wrapped_socket, password):
+    """Authenticates information from the wrapped socket
+
+         Args:
+             smtp_socket: Socket that we are reading the information from
+             message_info: Email information that we're sending to the server
+         """
+    wrapped_socket.send(b'EHLO ' + SMTP_DOMAINNAME.encode())
+    wrapped_socket.send(b'\r\n')
+
+    print()
+    read_lines(wrapped_socket, 9)
+
+    wrapped_socket.send(b'AUTH LOGIN\r\n')
+    print()
+    print(read_line(wrapped_socket))
+    wrapped_socket.send(base64.b64encode(message_info['From'].encode()) + b'\r\n')
+    print()
+    print(read_line(wrapped_socket))
+    wrapped_socket.send(base64.b64encode(password.encode()) + b'\r\n')
+    print()
+
+    # Checks the sender/recipient for good emails.
+    print(read_line(wrapped_socket))
+    wrapped_socket.send(b'MAIL FROM:<' + message_info['From'].encode() + b'>\r\n')
+    print()
+    print(read_line(wrapped_socket))
+    wrapped_socket.send(b'RCPT TO:<' + message_info['To'].encode() + b'>\r\n')
+    print()
+    print(read_line(wrapped_socket))
+    wrapped_socket.send(b'DATA\r\n')
+    print()
+    print(read_line(wrapped_socket))
+
+def send_data(message_info, wrapped_socket):
+    """Sends the message info chunk to the server
+
+        Args:
+            smtp_socket: Socket that we are reading the information from
+            message_info: Email information that we're sending to the server
+        """
+    wrapped_socket.send(b'From: ' + message_info['From'].encode() + b'\r\n')
+    wrapped_socket.send(b'To: ' + message_info['To'].encode() + b'\r\n')
+    wrapped_socket.send(b'Date: ' + message_info['Date'].encode() + b'\r\n')
+    wrapped_socket.send(b'Subject: ' + message_info['Subject'].encode() + b'\r\n')
+    wrapped_socket.send(b'\r\n')
+    wrapped_socket.send(b'Subject: ' + message_info['Text'].encode() + b'\r\n')
+    wrapped_socket.send(b'\r\n.\r\n')
 
 
-# Your code and additional functions go here. (Replace this line, too.)
+def read_lines(smtp_socket, number):
+    """reads a specificed number of lines of a reply from the server
 
-# ** Do not modify code below this line. **
-
-# Utility functions
-# You may use these functions to simplify your code.
-
+        Args:
+            smtp_socket: Socket that we are reading the information from
+            number: number of lines to read
+        """
+    for x in range(0, number):
+        print(read_line(smtp_socket))
 
 
 def read_line(smtp_socket):
+    """read a single line of a reply from the server
+
+        Args:
+            smtp_socket: Socket that we are reading the information from
+        """
     bytes = b''
     next_byte = b''
     exit_bytes = b''
@@ -216,7 +246,13 @@ def read_line(smtp_socket):
             exit_bytes += next_byte
         else:
             bytes += next_byte
-    return bytes
+    return bytes.decode()
+
+
+# ** Do not modify code below this line. **
+
+# Utility functions
+# You may use these functions to simplify your code.
 
 
 def get_formatted_date():
