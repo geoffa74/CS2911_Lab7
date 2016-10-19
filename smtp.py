@@ -191,8 +191,8 @@ def smtp_send(password, message_info, message_text):
     wrapped_socket.send(b'\r\n')
     wrapped_socket.send(message_text.encode())
     wrapped_socket.send(b'\r\n.\r\n')
-    wrapped_socket.send(b'QUIT\r\n')
     print(read_line(wrapped_socket))
+    wrapped_socket.send(b'QUIT\r\n')
     print(read_line(wrapped_socket))
 
 
