@@ -67,9 +67,11 @@ def main():
     print("message_info =", message_info)
     print()
 
-    message_info['Text'] = 'Test message_info number 6\r\n\r\nAnother line.'
+    filename = "sebern1.jpg"
 
-    smtp_send(password, message_info)
+    message_info['Text'] = 'Test message_info number 6\r\n\r\nAnother line.'
+    message_info['Content-Disposition'] = "attachment; filename= %s" % filename
+    smtp_send(password, message_info, filename)
 
 
 def login_gui():
@@ -132,7 +134,7 @@ def center_gui_on_screen(gui, gui_width, gui_height):
 
 # *** Do not modify code above this line ***
 
-def smtp_send(password, message_info):
+def smtp_send(password, message_info, filename):
     """Send a message via SMTP.
 
     Args:
@@ -144,7 +146,7 @@ def smtp_send(password, message_info):
                 'Subject': Email subject
             Other keys can be added to support other email headers, etc.
     """
-    #Initial handshake
+    # Initial handshake
     smtp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     smtp_socket.connect((SMTP_SERVER, SMTP_PORT))
     print(read_line(smtp_socket))
@@ -152,23 +154,21 @@ def smtp_send(password, message_info):
     print()
     read_lines(smtp_socket, 9)
 
-
     smtp_socket.send(b'STARTTLS\r\n')
     print()
     print(read_line(smtp_socket))
-
     context = ssl.create_default_context()
     wrapped_socket = context.wrap_socket(smtp_socket, server_hostname=SMTP_SERVER)
-
     authentication(message_info, wrapped_socket, password)
 
     # sends the actual information
-    send_data(message_info, wrapped_socket)
+    send_data(message_info, wrapped_socket, filename)
     print()
     print(read_line(wrapped_socket))
     wrapped_socket.send(b'QUIT\r\n')
     print()
     print(read_line(wrapped_socket))
+
 
 def authentication(message_info, wrapped_socket, password):
     """Authenticates information from the wrapped socket
@@ -204,7 +204,8 @@ def authentication(message_info, wrapped_socket, password):
     print()
     print(read_line(wrapped_socket))
 
-def send_data(message_info, wrapped_socket):
+
+def send_data(message_info, wrapped_socket, filename):
     """Sends the message info chunk to the server
 
         Args:
@@ -215,8 +216,9 @@ def send_data(message_info, wrapped_socket):
     wrapped_socket.send(b'To: ' + message_info['To'].encode() + b'\r\n')
     wrapped_socket.send(b'Date: ' + message_info['Date'].encode() + b'\r\n')
     wrapped_socket.send(b'Subject: ' + message_info['Subject'].encode() + b'\r\n')
-    wrapped_socket.send(b'\r\n')
-    wrapped_socket.send(b'Subject: ' + message_info['Text'].encode() + b'\r\n')
+    wrapped_socket.send(b'Content-Disposition: ' + message_info['Content-Disposition'].encode()+b'\r\n')
+    send_file(filename, wrapped_socket)
+    wrapped_socket.send(message_info['Text'].encode() + b'\r\n')
     wrapped_socket.send(b'\r\n.\r\n')
 
 
@@ -248,6 +250,15 @@ def read_line(smtp_socket):
             bytes += next_byte
     return bytes.decode()
 
+def send_file(filename, socket):
+    output_file = open(filename, 'rb')
+    i = 0
+    size = get_file_size(filename)
+    while i < size:
+        socket.send(output_file.read(1))
+        i += 1
+    socket.send('b\r\n')
+    output_file.close()
 
 # ** Do not modify code below this line. **
 
